@@ -8,6 +8,8 @@ import { buildWinstonLogger } from './logger/winston.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AccountsModule } from './accounts/accounts.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { LedgerModule } from './ledger/ledger.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { AccountsModule } from './accounts/accounts.module';
       useFactory: (configService: ConfigService) =>
         buildWinstonLogger(configService.get<string>('LOG_LEVEL') ?? 'info'),
     }),
+    LedgerModule,
+    TransactionsModule,
     AccountsModule,
     UsersModule,
     AuthModule,

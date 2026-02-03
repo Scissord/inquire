@@ -3,8 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { DatabaseModule } from '../db/database.module';
-import { TransactionsService } from './ledger.service';
-import { TransactionsController } from './ledger.controller';
+import { LedgerService } from './ledger.service';
 import { JwtTokenGuard } from '../auth/jwt-token.guard';
 
 @Module({
@@ -20,8 +19,7 @@ import { JwtTokenGuard } from '../auth/jwt-token.guard';
       }),
     }),
   ],
-  controllers: [TransactionsController],
-  providers: [TransactionsService, JwtTokenGuard],
-  exports: [TransactionsService],
+  providers: [LedgerService, JwtTokenGuard],
+  exports: [LedgerService],
 })
-export class TransactionsModule {}
+export class LedgerModule {}

@@ -7,20 +7,21 @@ export class LedgerService {
   constructor(private readonly pgService: PgService) {}
   async create(
     client: PgPoolClient,
-    type: string,
-    metadata: Record<any, unknown>,
+    transaction_id: string,
+    account_id: string,
+    amount: number,
   ) {
     const result = await client.query<ITransaction>(
       `
         INSERT INTO app.ledger (
           transaction_id,
-          status,
-          metadata
+          account_id,
+          amount
         )
         VALUES ($1, $2, $3)
         RETURNING id
       `,
-      [type, 'pending', metadata],
+      [transaction_id, account_id, amount],
     );
 
     return result.rows[0] ?? null;

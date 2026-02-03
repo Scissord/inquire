@@ -3,7 +3,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { JwtTokenGuard } from '../auth/jwt-token.guard';
 import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateTransferTransactionDto } from './dto/create-transfer-transaction.dto';
+import { CreateExchangeTransactionDto } from './dto/create-exchange-transaction.dto';
 
 @ApiTags('transactions')
 @Controller('transactions')
@@ -13,15 +14,23 @@ export class TransactionsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, JwtTokenGuard)
   @Post('/transfer')
-  async transfer(@Body() dto: CreateTransactionDto) {
-    return this.transactionsService.createTx(dto.type, dto.metadata);
+  async transfer(@Body() dto: CreateTransferTransactionDto) {
+    return this.transactionsService.createTransferTx(
+      dto.sender_account_id,
+      dto.receiver_account_id,
+      dto.amount,
+      dto.metadata,
+    );
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, JwtTokenGuard)
   @Post('/exchange')
-  async exchange(@Body() dto: CreateTransactionDto) {
-    return this.transactionsService.createTx(dto.type, dto.metadata);
+  async exchange(@Body() dto: CreateExchangeTransactionDto) {
+    return this.transactionsService.createExchangeTx(
+      dto.account_id,
+      dto.metadata,
+    );
   }
 
   @ApiBearerAuth()

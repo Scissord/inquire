@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as pg from 'pg';
 
-type QueryResult<T> = { rows: T[] };
+type QueryResult<T> = { rows: T[]; rowCount: number };
 
 export interface PgPoolClient {
   query<T>(

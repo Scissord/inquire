@@ -6,6 +6,7 @@ import { DatabaseModule } from '../db/database.module';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { JwtTokenGuard } from '../auth/jwt-token.guard';
+import { LedgerModule } from 'src/ledger/ledger.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JwtTokenGuard } from '../auth/jwt-token.guard';
         },
       }),
     }),
+    LedgerModule,
   ],
   controllers: [TransactionsController],
   providers: [TransactionsService, JwtTokenGuard],
