@@ -1,0 +1,1 @@
+“For simplicity and due to time constraints, the system uses a single short-lived JWT access token without refresh tokens.”

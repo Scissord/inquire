@@ -1,0 +1,101 @@
+{
+  "window.zoomLevel": 1.4,
+  "editor.fontSize": 12,
+  "editor.tabSize": 2,
+  "editor.fontFamily": "JetBrainsMono Nerd Font, monospace",
+  "editor.fontWeight": "500",
+  "editor.detectIndentation": false,
+  "editor.fontLigatures": true,
+  "editor.minimap.enabled": false,
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "editor.accessibilitySupport": "off",
+  "editor.formatOnSave": true,
+  "go.useLanguageServer": true,
+  "go.toolsManagement.autoUpdate": true,
+  "go.formatTool": "gofmt",          // или "gofumpt"
+  "go.lintTool": "golangci-lint",
+  "eslint.rules.customizations": [
+    { "rule": "@typescript-eslint/no-explicit-any", "severity": "off" }
+  ],
+  "[go]": {
+    "editor.defaultFormatter": "golang.Go",
+    "editor.action.openLink": false,
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "evenBetterToml.ignoreFiles": [
+    "**/.air.toml"
+  ],
+  "prettier.requireConfig": true,
+  "workbench.editor.enablePreview": false,
+  // "workbench.colorTheme": "One Monokai",
+  "workbench.iconTheme": "material-icon-theme",
+  "explorer.confirmDelete": false,
+  "explorer.compactFolders": false,
+  "explorer.confirmDragAndDrop": false,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "javascript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "files.trimTrailingWhitespace": true,
+  "html.format.enable": true,
+  "css.lint.unknownAtRules": "ignore",
+  "git.ignoreMissingGitWarning": true,
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "files.eol": "\n",
+  "liveSassCompile.settings.showOutputWindowOn": "Error",
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.port": 5501,
+  "cSpell.words": [
+    "@tailwind",
+    "Articuline",
+    "axios",
+    "beclean",
+    "eropower",
+    "Femiston",
+    "godotenv",
+    "Instatus",
+    "joho",
+    "kamelia",
+    "Kanban",
+    "leadvertex",
+    "manbalance",
+    "nodenext",
+    "nurdaulet",
+    "Pinia",
+    "prostrong",
+    "rabbitmq",
+    "RABBITMQ_HOST",
+    "Scissord",
+    "Scissxrd",
+    "signin",
+    "Signup",
+    "tailwindcss",
+    "toastification",
+    "uuidv4",
+    "valik",
+    "Артикулы",
+    "Главная",
+    "Номенклатура",
+    "свечение",
+    "Склад"
+  ],
+}

@@ -1,0 +1,2 @@
+CREATE SCHEMA auth;
+CREATE SCHEMA app;

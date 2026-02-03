@@ -1,0 +1,26 @@
+4. Как делать transfer / exchange (ключевая часть)
+Общий паттерн (обязательно так):
+BEGIN;
+
+1. Заблокировать нужные аккаунты (FOR UPDATE)
+2. Проверить балансы
+3. Создать transaction
+4. Создать ledger entries (баланс = 0)
+5. Обновить accounts.balance
+6. COMMIT;
+
+
+//////////////////////
+
+
+11. Минимум, который точно зайдёт ревьюеру
+
+Явный BEGIN / COMMIT
+
+FOR UPDATE
+
+Комментарий в коде типа:
+
+"Row-level locking prevents concurrent balance modification"
+
+Это прям жирный плюс ⭐
