@@ -1,12 +1,29 @@
+# Inquire
+
 Hello, and thanks for your time!
-1. git clone https://github.com/Scissord/inquire.git
+
+---
+
+## Getting Started
+
+```bash
+git clone https://github.com/Scissord/inquire.git
+```
 
 Now you have 2 variety:
 
-2. Check e2e.test
-cd ./backend -> npm run test:e2e -- transactions-deadlock
+---
 
-You should see:
+## E2E Tests
+
+```bash
+cd ./backend
+npm run test:e2e -- transactions-deadlock
+```
+
+### You should see:
+
+```
  PASS  test/transactions-deadlock.e2e-spec.ts (215.112 s)
   TransactionsService Deadlock Tests (e2e)
     Case 1: Bidirectional transfers (A ↔ B)
@@ -37,9 +54,28 @@ Tests:       14 passed, 14 total
 Snapshots:   0 total
 Time:        215.46 s
 Ran all test suites matching transactions-deadlock.
+```
 
-3. Start Docker
-1) go to main route -> /inquire
-2) docker compose up
-3) go to localhost:3000 in browser
-4) start to test frontend
+---
+
+## Start Docker
+
+1. Go to main route → `/inquire`
+2. `docker compose up`
+3. Go to `localhost:3000` in browser
+4. Start to test frontend
+
+---
+
+## FEATURES
+
+### Backend
+
+1. Make LedgerModule in backend
+2. Take out all queries to other instance
+3. Split code in createTransferTx and createExchangeTx func
+
+### Frontend
+
+1. More time for frontend, separate code
+2. Use library components, no time to understand Select in Shadcn

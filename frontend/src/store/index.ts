@@ -1,4 +1,4 @@
 export * from './user.store';
-export * from './confirmation';
-export * from './notification';
-export * from './theme';
+export * from './confirmation.store';
+export * from './notification.store';
+export * from './theme.store';

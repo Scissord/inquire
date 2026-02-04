@@ -6,19 +6,7 @@ import type { IAccount } from '@/interfaces';
 import { AccountService, TransactionService } from '@/services';
 import { useNotificationStore, useUserStore } from '@/store';
 import { useRouter } from 'next/navigation';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Button,
-  Input,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-} from '@/components';
+import { AccountDetails, TransferDialog } from './(blocks)';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -218,113 +206,25 @@ export default function AccountPage() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {!isLoading && !error && account && (
-          <div className="rounded-lg border bg-card p-6">
-            <div className="grid gap-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Account ID</p>
-                <p className="font-mono text-sm">{account.id}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">User ID</p>
-                <p className="font-mono text-sm">{account.user_id}</p>
-                {isOtherUserAccount && (
-                  <p className="text-xs text-yellow-600 mt-1">
-                    This account belongs to another user
-                  </p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Currency</p>
-                <p className="text-sm">{account.currency}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-sm">{account.balance}</p>
-              </div>
-            </div>
-
-            {isOtherUserAccount && (
-              <div className="mt-6 pt-4 border-t">
-                <Button onClick={handleOpenTransferDialog}>
-                  Transfer to this account
-                </Button>
-              </div>
-            )}
-          </div>
+          <AccountDetails
+            account={account}
+            isOtherUserAccount={!!isOtherUserAccount}
+            onOpenTransferDialog={handleOpenTransferDialog}
+          />
         )}
 
-        {/* Transfer Dialog */}
-        <Dialog
-          open={isTransferDialogOpen}
+        <TransferDialog
+          isOpen={isTransferDialogOpen}
           onOpenChange={setIsTransferDialogOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Transfer Funds</DialogTitle>
-              <DialogDescription>
-                Transfer {account?.currency} to account {account?.id}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Select your account to transfer from:</Label>
-                <RadioGroup
-                  value={selectedSenderAccountId}
-                  onValueChange={setSelectedSenderAccountId}
-                >
-                  {myAccounts.map((acc) => (
-                    <div key={acc.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={acc.id} id={acc.id} />
-                      <Label
-                        htmlFor={acc.id}
-                        className="font-normal cursor-pointer"
-                      >
-                        <span className="font-mono text-xs">
-                          {acc.id.slice(0, 8)}...
-                        </span>
-                        <span className="ml-2 text-muted-foreground">
-                          Balance: {acc.balance} {acc.currency}
-                        </span>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="amount">Amount ({account?.currency})</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Enter amount"
-                  value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsTransferDialogOpen(false)}
-                disabled={isTransferring}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleTransfer}
-                disabled={
-                  isTransferring || !transferAmount || !selectedSenderAccountId
-                }
-              >
-                {isTransferring ? 'Transferring...' : 'Transfer'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          account={account}
+          myAccounts={myAccounts}
+          selectedSenderAccountId={selectedSenderAccountId}
+          setSelectedSenderAccountId={setSelectedSenderAccountId}
+          transferAmount={transferAmount}
+          setTransferAmount={setTransferAmount}
+          isTransferring={isTransferring}
+          onTransfer={handleTransfer}
+        />
       </div>
     </div>
   );

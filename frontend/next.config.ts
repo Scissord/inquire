@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'nurdaulet.com',
+        hostname: 'test.com',
       },
     ],
   },
   reactStrictMode: false,
-}
+};
 
 export default nextConfig;

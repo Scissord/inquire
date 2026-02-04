@@ -1,24 +1,12 @@
-/* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components';
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components';
 import type { IAccount } from '@/interfaces';
 import { AccountService, AuthService, TransactionService } from '@/services';
 import { useNotificationStore, useUserStore } from '@/store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { ExchangeForm, TransferForm } from './(blocks)';
 
 export default function TransactionsPage() {
   // hooks
@@ -119,14 +107,7 @@ export default function TransactionsPage() {
     };
 
     fetchAccounts();
-  }, [
-    mounted,
-    user?.access_token,
-    logout,
-    router,
-    notificationStore,
-    setUser,
-  ]);
+  }, [mounted, user?.access_token, logout, router, notificationStore, setUser]);
 
   // init defaults after accounts loaded
   useEffect(() => {
@@ -403,217 +384,40 @@ export default function TransactionsPage() {
           </TabsList>
 
           <TabsContent value="exchange">
-            <Card>
-              <CardHeader>
-                <CardTitle>1) Between your wallets (Exchange)</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                {isAccountsLoading ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading accounts...
-                  </p>
-                ) : myAccounts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    You don't have any accounts yet.
-                  </p>
-                ) : (
-                  <>
-                    <div className="grid gap-2">
-                      <Label htmlFor="exchange-source">From (source)</Label>
-                      <select
-                        id="exchange-source"
-                        className={selectClassName}
-                        value={exchangeSourceId}
-                        onChange={(e) => setExchangeSourceId(e.target.value)}
-                        disabled={isExchanging}
-                      >
-                        {myAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.currency} • {acc.balance} •{' '}
-                            {acc.id.slice(0, 8)}...
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="exchange-destination">To (destination)</Label>
-                      <select
-                        id="exchange-destination"
-                        className={selectClassName}
-                        value={exchangeDestinationId}
-                        onChange={(e) =>
-                          setExchangeDestinationId(e.target.value)
-                        }
-                        disabled={isExchanging || !exchangeSourceId}
-                      >
-                        {exchangeDestinationOptions.length === 0 ? (
-                          <option value="">
-                            No destination wallets with another currency
-                          </option>
-                        ) : (
-                          exchangeDestinationOptions.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.currency} • {acc.balance} •{' '}
-                              {acc.id.slice(0, 8)}...
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {exchangeSourceAccount &&
-                        exchangeDestinationOptions.length === 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            Exchange requires two wallets with different
-                            currencies.
-                          </p>
-                        )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="exchange-amount">
-                        Amount
-                        {exchangeSourceAccount
-                          ? ` (${exchangeSourceAccount.currency})`
-                          : ''}
-                      </Label>
-                      <Input
-                        id="exchange-amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Enter amount"
-                        value={exchangeAmount}
-                        onChange={(e) => setExchangeAmount(e.target.value)}
-                        disabled={isExchanging}
-                      />
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleExchange}
-                        disabled={
-                          isExchanging ||
-                          !exchangeSourceId ||
-                          !exchangeDestinationId ||
-                          !exchangeAmount ||
-                          exchangeDestinationOptions.length === 0
-                        }
-                      >
-                        {isExchanging ? 'Exchanging...' : 'Exchange'}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <ExchangeForm
+              isAccountsLoading={isAccountsLoading}
+              myAccounts={myAccounts}
+              exchangeSourceId={exchangeSourceId}
+              setExchangeSourceId={setExchangeSourceId}
+              exchangeDestinationId={exchangeDestinationId}
+              setExchangeDestinationId={setExchangeDestinationId}
+              exchangeAmount={exchangeAmount}
+              setExchangeAmount={setExchangeAmount}
+              exchangeSourceAccount={exchangeSourceAccount}
+              exchangeDestinationOptions={exchangeDestinationOptions}
+              isExchanging={isExchanging}
+              handleExchange={handleExchange}
+              selectClassName={selectClassName}
+            />
           </TabsContent>
 
           <TabsContent value="transfer">
-            <Card>
-              <CardHeader>
-                <CardTitle>2) To other wallets (Transfer)</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                {isAccountsLoading ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading accounts...
-                  </p>
-                ) : myAccounts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    You don't have any accounts yet.
-                  </p>
-                ) : (
-                  <>
-                    <div className="grid gap-2">
-                      <Label htmlFor="transfer-sender">From (your wallet)</Label>
-                      <select
-                        id="transfer-sender"
-                        className={selectClassName}
-                        value={transferSenderId}
-                        onChange={(e) => setTransferSenderId(e.target.value)}
-                        disabled={isTransferring}
-                      >
-                        {myAccounts.map((acc) => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.currency} • {acc.balance} •{' '}
-                            {acc.id.slice(0, 8)}...
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="transfer-receiver">
-                        To (other user's wallet)
-                      </Label>
-                      <select
-                        id="transfer-receiver"
-                        className={selectClassName}
-                        value={transferReceiverId}
-                        onChange={(e) => setTransferReceiverId(e.target.value)}
-                        disabled={isTransferring || isReceiversLoading || !transferSenderId}
-                      >
-                        {isReceiversLoading ? (
-                          <option value="">Loading receivers...</option>
-                        ) : transferReceiverOptions.length === 0 ? (
-                          <option value="">
-                            No available receiver wallets for this currency
-                          </option>
-                        ) : (
-                          transferReceiverOptions.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.user_email} • {acc.currency} •{' '}
-                              {acc.id.slice(0, 8)}...
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {transferSenderAccount &&
-                        !isReceiversLoading &&
-                        transferReceiverOptions.length === 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            No other users have wallets with {transferSenderAccount.currency} currency.
-                          </p>
-                        )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="transfer-amount">
-                        Amount
-                        {transferSenderAccount
-                          ? ` (${transferSenderAccount.currency})`
-                          : ''}
-                      </Label>
-                      <Input
-                        id="transfer-amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Enter amount"
-                        value={transferAmount}
-                        onChange={(e) => setTransferAmount(e.target.value)}
-                        disabled={isTransferring}
-                      />
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleTransfer}
-                        disabled={
-                          isTransferring ||
-                          !transferSenderId ||
-                          !transferReceiverId ||
-                          !transferAmount ||
-                          transferReceiverOptions.length === 0
-                        }
-                      >
-                        {isTransferring ? 'Transferring...' : 'Transfer'}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <TransferForm
+              isAccountsLoading={isAccountsLoading}
+              myAccounts={myAccounts}
+              transferSenderId={transferSenderId}
+              setTransferSenderId={setTransferSenderId}
+              transferReceiverId={transferReceiverId}
+              setTransferReceiverId={setTransferReceiverId}
+              transferAmount={transferAmount}
+              setTransferAmount={setTransferAmount}
+              transferSenderAccount={transferSenderAccount}
+              transferReceiverOptions={transferReceiverOptions}
+              isTransferring={isTransferring}
+              isReceiversLoading={isReceiversLoading}
+              handleTransfer={handleTransfer}
+              selectClassName={selectClassName}
+            />
           </TabsContent>
         </Tabs>
       </div>

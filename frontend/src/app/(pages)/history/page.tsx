@@ -1,23 +1,12 @@
 'use client';
 
-import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components';
+import { TooltipProvider } from '@/components';
 import { TransactionService } from '@/services';
 import { ITransaction } from '@/interfaces';
 import { useNotificationStore, useUserStore } from '@/store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { TransactionsFilter, TransactionsTable } from './(blocks)';
 
 const limit = 10;
 
@@ -116,8 +105,8 @@ export default function HistoryPage() {
       value instanceof Date
         ? value
         : typeof value === 'string' || typeof value === 'number'
-          ? new Date(value)
-          : null;
+        ? new Date(value)
+        : null;
 
     if (!date || Number.isNaN(date.getTime())) return '—';
     return date.toLocaleString();
@@ -132,119 +121,23 @@ export default function HistoryPage() {
           </div>
 
           <section className="rounded-lg border bg-card">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xs text-muted-foreground">
-                  Page {transactionsPage} / {totalPages}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  (Total: {totalTransactions})
-                </span>
-              </div>
+            <TransactionsFilter
+              transactionsPage={transactionsPage}
+              setTransactionsPage={setTransactionsPage}
+              transactionsType={transactionsType}
+              setTransactionsType={setTransactionsType}
+              totalPages={totalPages}
+              totalTransactions={totalTransactions}
+              isTransactionsLoading={isTransactionsLoading}
+              canGoPrev={canGoPrev}
+              canGoNext={canGoNext}
+            />
 
-              <div className="flex items-center gap-2">
-                <select
-                  className="h-8 rounded-md border border-input bg-transparent px-2 text-xs text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  value={transactionsType}
-                  onChange={(e) => {
-                    const value = e.target.value as
-                      | ''
-                      | 'exchange'
-                      | 'transfer';
-                    setTransactionsType(value);
-                    setTransactionsPage(1);
-                  }}
-                  disabled={isTransactionsLoading}
-                  aria-label="Transaction type"
-                >
-                  <option value="">All</option>
-                  <option value="exchange">Exchange</option>
-                  <option value="transfer">Transfer</option>
-                </select>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canGoPrev}
-                  onClick={() =>
-                    setTransactionsPage((prev) => Math.max(1, prev - 1))
-                  }
-                >
-                  Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!canGoNext}
-                  onClick={() =>
-                    setTransactionsPage((prev) =>
-                      Math.min(totalPages, prev + 1),
-                    )
-                  }
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-
-            {isTransactionsLoading ? (
-              <p className="px-4 py-3 text-sm text-muted-foreground">
-                Loading transactions...
-              </p>
-            ) : transactions.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Metadata</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((tx) => {
-                    const metadataText =
-                      tx.metadata && Object.keys(tx.metadata).length > 0
-                        ? JSON.stringify(tx.metadata)
-                        : '—';
-
-                    return (
-                      <TableRow key={tx.id}>
-                        <TableCell className="font-mono text-xs">
-                          {tx.id}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {tx.type}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {tx.status}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {formatDateTime(tx.created_at)}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="block max-w-[520px] truncate font-mono">
-                                {metadataText}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[720px] wrap-break-word font-mono text-xs">
-                              {metadataText}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="px-4 py-3 text-sm text-muted-foreground">
-                No transactions found.
-              </p>
-            )}
+            <TransactionsTable
+              transactions={transactions}
+              isTransactionsLoading={isTransactionsLoading}
+              formatDateTime={formatDateTime}
+            />
           </section>
         </div>
       </div>

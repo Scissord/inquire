@@ -85,12 +85,6 @@ export function MainHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => router.push('/profile')}
-              className="cursor-pointer"
-            >
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem
               onClick={handleLogout}
               className="cursor-pointer text-destructive"
             >
