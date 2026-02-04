@@ -1,6 +1,6 @@
-1. CREATE e2e jest, to test createTransferTx() for next deadlock situations:
+1. CREATE e2e jest, to test createTransferTx() for createExchangeTx() next deadlock situations:
 1) A → B и B → A (одновременно)
 2) A → C, B → C, D → C (много источников → один получатель)
 3) A → B, B → C, C → A (циклический перевод)
 
-2. CREATE e2e jest, to test createExchangeTx() for next deadlock situations:
+also situations, when user making exchanges, but at the same time other user sending to him balance
