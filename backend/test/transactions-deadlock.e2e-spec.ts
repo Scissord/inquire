@@ -1,36 +1,39 @@
+/**
+ * e2e test for TransactionsService
+ * to run all test: npm run test:e2e -- transactions-deadlock
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { TransactionsService } from '../src/transactions/transactions.service';
 import { PgService } from '../src/db/pg.service';
 
-// npm run test:e2e -- transactions-deadlock
-
 /**
- * Deadlock тесты для TransactionsService
+ * Deadlock tests for TransactionsService
  *
- * Тестируем createTransferTx и createExchangeTx на отсутствие deadlock
- * при параллельных операциях благодаря ORDER BY id в SELECT FOR UPDATE.
+ * We test createTransferTx and createExchangeTx to ensure there are no deadlocks
+ * during parallel operations thanks to ORDER BY id in SELECT FOR UPDATE.
  *
- * ВАЖНО: Для запуска нужна работающая база данных с:
- * - Тестовыми аккаунтами
- * - Таблицей exchange_rates с курсами USD/EUR
- * - Системными exchange аккаунтами
+ * IMPORTANT: To run these tests, a working database is required with:
+ * - Test accounts
+ * - An exchange_rates table with USD/EUR rates
+ * - System exchange accounts
  */
 describe('TransactionsService Deadlock Tests (e2e)', () => {
   let app: INestApplication;
   let transactionsService: TransactionsService;
   let pgService: PgService;
 
-  // Тестовые аккаунты User 1 (будут созданы в beforeAll)
+  // Test accounts User 1 (will be created in beforeAll)
   let user1AccountUSD: string;
   let user1AccountEUR: string;
 
-  // Тестовые аккаунты User 2
+  // Test accounts User 2
   let user2AccountUSD: string;
   let user2AccountEUR: string;
 
-  // Тестовые аккаунты User 3
+  // Test accounts User 3
   let user3AccountUSD: string;
   let user3AccountEUR: string;
 
@@ -38,7 +41,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   let testUser2Id: string;
   let testUser3Id: string;
 
-  // Алиасы для старых тестов (совместимость)
+  // Aliases for old tests (compatibility)
   let accountA: string;
   let accountB: string;
   let accountC: string;
@@ -46,10 +49,10 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
 
   const INITIAL_BALANCE = '10000.00';
   const TRANSFER_AMOUNT = '10.00';
-  const TIMEOUT = 120000; // 120 секунд на тест (увеличено для exchange)
+  const TIMEOUT = 120000; // 120 seconds for test (increased for exchange)
 
   async function setupTestData() {
-    // Создаём тестовых пользователей
+    // Create test users
     const user1Result = await pgService.query<{ id: string }>(
       `INSERT INTO auth.users (email, password_hash) VALUES ($1, $2) RETURNING id`,
       [`deadlock-test-user1-${Date.now()}@test.com`, 'test-hash'],
@@ -68,23 +71,23 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     );
     testUser3Id = user3Result.rows[0].id;
 
-    // User 1: USD + EUR аккаунты
+    // User 1: USD + EUR accounts
     user1AccountUSD = await createTestAccount(testUser1Id, 'USD');
     user1AccountEUR = await createTestAccount(testUser1Id, 'EUR');
 
-    // User 2: USD + EUR аккаунты
+    // User 2: USD + EUR accounts
     user2AccountUSD = await createTestAccount(testUser2Id, 'USD');
     user2AccountEUR = await createTestAccount(testUser2Id, 'EUR');
 
-    // User 3: USD + EUR аккаунты
+    // User 3: USD + EUR accounts
     user3AccountUSD = await createTestAccount(testUser3Id, 'USD');
     user3AccountEUR = await createTestAccount(testUser3Id, 'EUR');
 
-    // Алиасы для старых тестов (все USD для совместимости)
+    // Aliases for old tests (all USD for compatibility)
     accountA = user1AccountUSD;
     accountB = user2AccountUSD;
     accountC = user3AccountUSD;
-    accountD = await createTestAccount(testUser1Id, 'USD'); // дополнительный USD
+    accountD = await createTestAccount(testUser1Id, 'USD'); // additional USD
 
     console.log('Test accounts created:', {
       user1: { USD: user1AccountUSD, EUR: user1AccountEUR },
@@ -113,7 +116,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     const userIds = [testUser1Id, testUser2Id, testUser3Id].filter(Boolean);
     if (userIds.length === 0) return;
 
-    // Удаляем в правильном порядке (учитывая foreign keys)
+    // Delete in the correct order (considering foreign keys)
     for (const userId of userIds) {
       await pgService.query(
         `
@@ -165,21 +168,21 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     transactionsService = app.get<TransactionsService>(TransactionsService);
     pgService = app.get<PgService>(PgService);
 
-    // Создаём тестового пользователя и аккаунты
+    // Create test user and accounts
     await setupTestData();
   }, TIMEOUT);
 
   afterAll(async () => {
-    // Очищаем тестовые данные
+    // Clean up test data
     await cleanupTestData();
     await app.close();
   }, TIMEOUT);
 
   /**
-   * Кейс 1: A → B и B → A (одновременно)
+   * Case 1: A → B and B → A (simultaneously)
    *
-   * Классический сценарий для deadlock, если блокировки не упорядочены.
-   * С ORDER BY id deadlock невозможен.
+   * Classic scenario for deadlock, if locks are not ordered.
+   * ORDER BY id deadlock is not possible.
    */
   describe('Case 1: Bidirectional transfers (A ↔ B)', () => {
     beforeEach(async () => {
@@ -211,7 +214,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           );
         }
 
-        // Все транзакции должны завершиться без deadlock
+        // All transactions should finish without deadlock
         const results = await Promise.allSettled(promises);
 
         const fulfilled = results.filter((r) => r.status === 'fulfilled');
@@ -221,7 +224,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 1: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем, что не было deadlock ошибок
+        // Check that there were no deadlock errors
         for (const result of rejected) {
           if (result.status === 'rejected') {
             const errorMessage =
@@ -230,7 +233,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           }
         }
 
-        // Балансы должны быть корректными (сумма не изменилась)
+        // Balances should be correct (sum did not change)
         const balanceA = await getBalance(accountA);
         const balanceB = await getBalance(accountB);
         const totalBalance = parseFloat(balanceA) + parseFloat(balanceB);
@@ -247,7 +250,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     it(
       'should handle rapid A↔B exchanges without deadlock',
       async () => {
-        // Более агрессивный тест - 50 параллельных транзакций
+        // More aggressive test - 50 parallel transactions
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < 25; i++) {
@@ -283,9 +286,9 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 2: A → C, B → C, D → C (много источников → один получатель)
+   * Case 2: A → C, B → C, D → C (many sources → one recipient)
    *
-   * Все транзакции конкурируют за блокировку аккаунта C.
+   * All transactions compete for the C account lock.
    */
   describe('Case 2: Multiple sources to single destination (A,B,D → C)', () => {
     beforeEach(async () => {
@@ -334,7 +337,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 2: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем отсутствие deadlock
+        // Check for the absence of deadlock
         for (const result of rejected) {
           if (result.status === 'rejected') {
             const errorMessage =
@@ -343,7 +346,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           }
         }
 
-        // Проверяем, что общая сумма не изменилась
+        // Check that the total sum did not change
         const balances = await Promise.all([
           getBalance(accountA),
           getBalance(accountB),
@@ -367,10 +370,10 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 3: A → B, B → C, C → A (циклический перевод)
+   * Case 3: A → B, B → C, C → A (circular transfer)
    *
-   * Циклическая зависимость - классический сценарий для deadlock.
-   * С ORDER BY id deadlock невозможен.
+   * Circular dependency - classic scenario for deadlock.
+   * ORDER BY id deadlock is not possible.
    */
   describe('Case 3: Circular transfers (A → B → C → A)', () => {
     beforeEach(async () => {
@@ -419,7 +422,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 3: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем отсутствие deadlock
+        // Check for the absence of deadlock
         for (const result of rejected) {
           if (result.status === 'rejected') {
             const errorMessage =
@@ -428,7 +431,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           }
         }
 
-        // Проверяем, что общая сумма не изменилась
+        // Check that the total sum did not change
         const balances = await Promise.all([
           getBalance(accountA),
           getBalance(accountB),
@@ -452,7 +455,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     it(
       'should handle aggressive circular transfers without deadlock',
       async () => {
-        // Очень агрессивный тест - 100 параллельных циклических транзакций
+        // Very aggressive test - 100 parallel circular transactions
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < 33; i++) {
@@ -500,9 +503,9 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Бонус: Комбинированный стресс-тест
+   * Bonus: Combined stress test
    *
-   * Все три паттерна одновременно.
+   * All three patterns simultaneously.
    */
   describe('Bonus: Combined stress test', () => {
     beforeEach(async () => {
@@ -514,7 +517,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
       async () => {
         const promises: Promise<unknown>[] = [];
 
-        // Кейс 1: A ↔ B
+        // Case 1: A ↔ B
         for (let i = 0; i < 5; i++) {
           promises.push(
             transactionsService.createTransferTx(accountA, accountB, '1.00', {
@@ -528,7 +531,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           );
         }
 
-        // Кейс 2: многие → C
+        // Case 2: many → C
         for (let i = 0; i < 5; i++) {
           promises.push(
             transactionsService.createTransferTx(accountA, accountC, '1.00', {
@@ -547,7 +550,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           );
         }
 
-        // Кейс 3: циклический
+        // Case 3: circular
         for (let i = 0; i < 5; i++) {
           promises.push(
             transactionsService.createTransferTx(accountA, accountB, '1.00', {
@@ -579,7 +582,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Combined: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Главное - нет deadlock
+        // The main thing - no deadlock
         const deadlockErrors = rejected.filter(
           (r) =>
             r.status === 'rejected' &&
@@ -588,7 +591,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
 
         expect(deadlockErrors.length).toBe(0);
 
-        // Проверяем сохранение общей суммы
+        // Check that the total sum was preserved
         const balances = await Promise.all([
           getBalance(accountA),
           getBalance(accountB),
@@ -615,12 +618,12 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 4: Входящий перевод + Исходящий перевод на том же аккаунте
+   * Case 4: Incoming transfer + Outgoing transfer on the same account
    *
-   * User2 кидает деньги на User1.USD
-   * User1 в это время переводит с User1.USD на User3.USD
+   * User2 sends money to User1.USD
+   * User1 at the same time transfers from User1.USD to User3.USD
    *
-   * Оба хотят заблокировать User1.USD
+   * Both want to lock User1.USD
    */
   describe('Case 4: Incoming + Outgoing on same account', () => {
     beforeEach(async () => {
@@ -634,7 +637,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < iterations; i++) {
-          // User2 → User1.USD (входящий)
+          // User2 → User1.USD (incoming)
           promises.push(
             transactionsService.createTransferTx(
               user2AccountUSD,
@@ -644,7 +647,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
             ),
           );
 
-          // User1.USD → User3.USD (исходящий от владельца)
+          // User1.USD → User3.USD (outgoing from the owner)
           promises.push(
             transactionsService.createTransferTx(
               user1AccountUSD,
@@ -664,7 +667,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 4: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем отсутствие deadlock
+        // Check for the absence of deadlock
         const deadlockErrors = rejected.filter(
           (r) =>
             r.status === 'rejected' &&
@@ -673,7 +676,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
 
         expect(deadlockErrors.length).toBe(0);
 
-        // Общая сумма должна сохраниться
+        // The total sum should be preserved
         const balances = await Promise.all([
           getBalance(user1AccountUSD),
           getBalance(user2AccountUSD),
@@ -699,7 +702,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
       async () => {
         const promises: Promise<unknown>[] = [];
 
-        // Много входящих от разных пользователей
+        // Many incoming from different users
         for (let i = 0; i < 15; i++) {
           promises.push(
             transactionsService.createTransferTx(
@@ -717,7 +720,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
               { from: 'user3' },
             ),
           );
-          // Владелец пытается вывести
+          // The owner tries to withdraw
           promises.push(
             transactionsService.createTransferTx(
               user1AccountUSD,
@@ -746,15 +749,15 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 5: Exchange + Transfer параллельно
+   * Case 5: Exchange + Transfer parallel
    *
-   * User1 делает Exchange USD → EUR
-   * User2 кидает деньги на User1.USD (или User1.EUR)
+   * User1 makes Exchange USD → EUR
+   * User2 sends money to User1.USD (or User1.EUR)
    *
-   * Exchange блокирует: User1.USD, User1.EUR, System.USD, System.EUR
-   * Transfer блокирует: User2.USD, User1.USD
+   * Exchange locks: User1.USD, User1.EUR, System.USD, System.EUR
+   * Transfer locks: User2.USD, User1.USD
    *
-   * Общий ресурс: User1.USD
+   * The total resource: User1.USD
    */
   describe('Case 5: Exchange + Transfer on same account', () => {
     beforeEach(async () => {
@@ -764,12 +767,12 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     it(
       'should handle exchange while receiving transfer on source account',
       async () => {
-        // Минимум итераций - системные аккаунты сериализуют все exchanges
+        // Minimum iterations - system accounts serialize all exchanges
         const iterations = 3;
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < iterations; i++) {
-          // User1 делает Exchange USD → EUR
+          // User1 makes Exchange USD → EUR
           promises.push(
             transactionsService.createExchangeTx(
               user1AccountUSD,
@@ -779,7 +782,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
             ),
           );
 
-          // User2 кидает USD на User1.USD (конфликт с source аккаунтом exchange)
+          // User2 sends USD to User1.USD (conflict with source account exchange)
           promises.push(
             transactionsService.createTransferTx(
               user2AccountUSD,
@@ -799,7 +802,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 5a: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем отсутствие DEADLOCK (lock_timeout ошибки допустимы)
+        // Check for the absence of DEADLOCK (lock_timeout errors are allowed)
         const deadlockErrors = rejected.filter(
           (r) =>
             r.status === 'rejected' &&
@@ -829,7 +832,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < iterations; i++) {
-          // User1 делает Exchange USD → EUR
+          // User1 makes Exchange USD → EUR
           promises.push(
             transactionsService.createExchangeTx(
               user1AccountUSD,
@@ -839,7 +842,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
             ),
           );
 
-          // User2 кидает EUR на User1.EUR (конфликт с destination аккаунтом exchange)
+          // User2 sends EUR to User1.EUR (conflict with destination account exchange)
           promises.push(
             transactionsService.createTransferTx(
               user2AccountEUR,
@@ -877,7 +880,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
         const promises: Promise<unknown>[] = [];
 
         for (let i = 0; i < iterations; i++) {
-          // User1 делает Exchange USD → EUR
+          // User1 makes Exchange USD → EUR
           promises.push(
             transactionsService.createExchangeTx(
               user1AccountUSD,
@@ -887,7 +890,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
             ),
           );
 
-          // User1 переводит USD кому-то (с того же source что и exchange!)
+          // User1 transfers USD to someone (same source as exchange!)
           promises.push(
             transactionsService.createTransferTx(
               user1AccountUSD,
@@ -920,16 +923,16 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 6: Два Exchange одновременно (разные пользователи)
+   * Case 6: Two Exchanges simultaneously (different users)
    *
-   * User1 делает Exchange USD → EUR
-   * User2 делает Exchange EUR → USD
+   * User1 makes Exchange USD → EUR
+   * User2 makes Exchange EUR → USD
    *
-   * Оба конкурируют за системные аккаунты (System.USD, System.EUR)
+   * Both compete for system accounts (System.USD, System.EUR)
    *
-   * ВАЖНО: Системные аккаунты - это "бутылочное горлышко", все exchange
-   * сериализуются через них. Это не deadlock, а contention.
-   * lock_timeout = 5s поможет отклонить запросы вместо бесконечного ожидания.
+   * IMPORTANT: System accounts are the "bottleneck", all exchanges
+   * are serialized through them. This is not a deadlock, but a contention.
+   * lock_timeout = 5s will help reject requests instead of infinite waiting.
    */
   describe('Case 6: Multiple exchanges competing for system accounts', () => {
     beforeEach(async () => {
@@ -939,7 +942,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     it(
       'should handle opposite exchanges without deadlock',
       async () => {
-        // Минимум итераций - все exchanges сериализуются через системные аккаунты
+        // Minimum iterations - all exchanges are serialized through system accounts
         const iterations = 2;
         const promises: Promise<unknown>[] = [];
 
@@ -954,7 +957,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
             ),
           );
 
-          // User2: EUR → USD (противоположное направление!)
+          // User2: EUR → USD (opposite direction!)
           promises.push(
             transactionsService.createExchangeTx(
               user2AccountEUR,
@@ -974,7 +977,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Case 6: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Проверяем отсутствие DEADLOCK (lock_timeout ошибки - ожидаемы)
+        // Check for the absence of DEADLOCK (lock_timeout errors - expected)
         const deadlockErrors = rejected.filter(
           (r) =>
             r.status === 'rejected' &&
@@ -1000,7 +1003,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
     it(
       'should handle three users exchanging simultaneously',
       async () => {
-        // Минимум - 1 exchange от каждого из 3 пользователей = 3 операции
+        // Minimum - 1 exchange from each of 3 users = 3 operations
         const iterations = 1;
         const promises: Promise<unknown>[] = [];
 
@@ -1056,10 +1059,10 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
   });
 
   /**
-   * Кейс 7: Комбинированный стресс-тест с Exchange
+   * Case 7: Combined stress test with Exchange
    *
-   * Transfer + Exchange все вместе
-   * Уменьшено количество операций из-за contention на системных аккаунтах
+   * Transfer + Exchange together
+   * Reduced number of operations due to contention on system accounts
    */
   describe('Case 7: Ultimate stress test (Transfer + Exchange)', () => {
     beforeEach(async () => {
@@ -1071,7 +1074,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
       async () => {
         const promises: Promise<unknown>[] = [];
 
-        // Transfers между пользователями (USD) - быстрые, можно больше
+        // Transfers between users (USD) - fast, can be more
         for (let i = 0; i < 5; i++) {
           promises.push(
             transactionsService.createTransferTx(
@@ -1091,7 +1094,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           );
         }
 
-        // Transfers между пользователями (EUR)
+        // Transfers between users (EUR)
         for (let i = 0; i < 3; i++) {
           promises.push(
             transactionsService.createTransferTx(
@@ -1103,8 +1106,8 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           );
         }
 
-        // Exchanges - минимум из-за contention на системных аккаунтах
-        // Только 2 exchange операции - они сериализуются через системные аккаунты
+        // Exchanges - minimum due to contention on system accounts
+        // Only 2 exchange operations - they are serialized through system accounts
         promises.push(
           transactionsService.createExchangeTx(
             user1AccountUSD,
@@ -1135,7 +1138,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
           `Ultimate: ${fulfilled.length} succeeded, ${rejected.length} failed`,
         );
 
-        // Главное - нет deadlock!
+        // The main thing - no deadlock!
         const deadlockErrors = rejected.filter(
           (r) =>
             r.status === 'rejected' &&
@@ -1144,7 +1147,7 @@ describe('TransactionsService Deadlock Tests (e2e)', () => {
 
         expect(deadlockErrors.length).toBe(0);
 
-        // Показываем типы ошибок (lock_timeout ожидаем, deadlock - нет)
+        // Show error types (lock_timeout expected, deadlock - no)
         if (rejected.length > 0) {
           const errorTypes = new Map<string, number>();
           for (const r of rejected) {

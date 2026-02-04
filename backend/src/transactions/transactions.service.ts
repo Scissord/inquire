@@ -5,22 +5,13 @@ import {
 } from '@nestjs/common';
 import { PgPoolClient, PgService } from '../db/pg.service';
 import type { ITransaction } from './transactions.model';
-import { LedgerService } from 'src/ledger/ledger.service';
 
-// ALTER TABLE app.accounts
-// ADD CONSTRAINT balance_non_negative CHECK (balance >= 0);
-
-// System user ID (defined in migration 006)
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 @Injectable()
 export class TransactionsService {
-  constructor(
-    private readonly pgService: PgService,
-    private readonly ledgersService: LedgerService,
-  ) {}
+  constructor(private readonly pgService: PgService) {}
 
-  // Cache for system exchange accounts (loaded from DB)
   private systemExchangeAccounts: Record<string, string> | null = null;
 
   /**
@@ -69,9 +60,6 @@ export class TransactionsService {
       throw new BadRequestException('Invalid transaction type');
     }
 
-    // NOTE:
-    // app.transactions doesn't have user_id. A transaction "belongs" to a user
-    // if there is at least one ledger entry for one of user's accounts.
     const conditions: string[] = [
       `
         EXISTS (
@@ -130,10 +118,18 @@ export class TransactionsService {
     };
   }
 
+  /**
+   * Transfer currency between user's own wallets
+   *
+   * Business logic:
+   * 1. User transfers X amount from source account to destination account
+   * 2. Creates 2 ledger entries to maintain sum = 0 per currency:
+   *    - Source account: user -X, receiver +X (sum = 0)
+   */
   async createTransferTx(
     sender_account_id: string,
     receiver_account_id: string,
-    amount: string, // строка!
+    amount: string,
     metadata: Record<string, unknown>,
   ) {
     const client = await this.pgService.getClient();
@@ -141,14 +137,12 @@ export class TransactionsService {
     try {
       await client.query('BEGIN');
 
-      // Устанавливаем таймаут на блокировки (5 секунд)
       await client.query("SET LOCAL lock_timeout = '5s'");
 
-      // 1️⃣ Блокируем аккаунты (фиксированный порядок)
       const { rows: accounts } = await client.query<{
         id: string;
         currency: string;
-        balance: string; // numeric -> string
+        balance: string;
       }>(
         `
           SELECT
@@ -170,12 +164,10 @@ export class TransactionsService {
       const sender = accounts.find((a) => a.id === sender_account_id)!;
       const receiver = accounts.find((a) => a.id === receiver_account_id)!;
 
-      // 2️⃣ Проверки
       if (sender.currency !== receiver.currency) {
         throw new BadRequestException('Currency mismatch');
       }
 
-      // balance и amount сравниваем в SQL, а не в JS
       const { rowCount } = await client.query(
         `
           SELECT 1
@@ -188,7 +180,6 @@ export class TransactionsService {
         throw new BadRequestException('Insufficient funds');
       }
 
-      // 3️⃣ Transaction
       const {
         rows: [transaction],
       } = await client.query<ITransaction>(
@@ -209,7 +200,6 @@ export class TransactionsService {
         ['transfer', 'completed', metadata],
       );
 
-      // 4️⃣ Ledger
       await client.query(
         `
           INSERT INTO app.ledger (
@@ -224,7 +214,6 @@ export class TransactionsService {
         [transaction.id, sender_account_id, amount, receiver_account_id],
       );
 
-      // 5️⃣ Балансы
       await client.query(
         `
           UPDATE app.accounts
@@ -275,11 +264,8 @@ export class TransactionsService {
     try {
       await client.query('BEGIN');
 
-      // Устанавливаем таймаут на блокировки (5 секунд)
-      // Если не получим лок за это время - откат и retry на клиенте
       await client.query("SET LOCAL lock_timeout = '5s'");
 
-      // 1️⃣ Получаем аккаунты пользователя (без блокировки пока)
       const { rows: userAccounts } = await client.query<{
         id: string;
         user_id: string;
@@ -309,21 +295,18 @@ export class TransactionsService {
         (a) => a.id === destination_account_id,
       )!;
 
-      // Проверка: это должны быть разные валюты
       if (sourceAccount.currency === destAccount.currency) {
         throw new BadRequestException(
           'Exchange requires different currencies. Use transfer for same currency.',
         );
       }
 
-      // Проверка: аккаунты должны принадлежать одному пользователю
       if (sourceAccount.user_id !== destAccount.user_id) {
         throw new BadRequestException(
           'Exchange only allowed between your own accounts',
         );
       }
 
-      // 2️⃣ Получаем курс обмена
       const { rows: rateRows } = await client.query<{
         rate: string;
       }>(
@@ -343,7 +326,6 @@ export class TransactionsService {
 
       const rate = rateRows[0].rate;
 
-      // 3️⃣ Определяем системные аккаунты (из БД, с кэшированием)
       const systemSourceAccount = await this.getSystemExchangeAccount(
         sourceAccount.currency,
       );
@@ -357,8 +339,6 @@ export class TransactionsService {
         );
       }
 
-      // 4️⃣ Блокируем ВСЕ 4 аккаунта в фиксированном порядке (по ID)
-      // Это предотвращает deadlock при параллельных операциях
       const allAccountIds = [
         source_account_id,
         destination_account_id,
@@ -385,7 +365,6 @@ export class TransactionsService {
         throw new NotFoundException('System exchange accounts not found');
       }
 
-      // Перечитываем балансы после блокировки
       const lockedSource = lockedAccounts.find(
         (a) => a.id === source_account_id,
       )!;
@@ -393,7 +372,6 @@ export class TransactionsService {
         (a) => a.id === systemDestAccount,
       )!;
 
-      // 5️⃣ Проверка баланса пользователя
       const { rowCount: hasFunds } = await client.query(
         `
           SELECT 1
@@ -406,7 +384,6 @@ export class TransactionsService {
         throw new BadRequestException('Insufficient funds');
       }
 
-      // 6️⃣ Рассчитываем сумму в целевой валюте
       const { rows: convertedRows } = await client.query<{
         converted_amount: string;
       }>(
@@ -417,7 +394,6 @@ export class TransactionsService {
       );
       const convertedAmount = convertedRows[0].converted_amount;
 
-      // Проверка: достаточно ли у системы средств в целевой валюте
       const { rowCount: systemHasFunds } = await client.query(
         `
           SELECT 1
@@ -432,7 +408,6 @@ export class TransactionsService {
         );
       }
 
-      // 7️⃣ Создаём транзакцию
       const {
         rows: [transaction],
       } = await client.query<ITransaction>(
@@ -464,9 +439,6 @@ export class TransactionsService {
         ],
       );
 
-      // 8️⃣ Создаём 4 записи в ledger
-      // Source currency side: user -amount, system +amount (sum = 0)
-      // Dest currency side: system -converted, user +converted (sum = 0)
       await client.query(
         `
           INSERT INTO app.ledger (
@@ -482,17 +454,15 @@ export class TransactionsService {
         `,
         [
           transaction.id,
-          source_account_id, // user source: -amount
+          source_account_id,
           amount,
-          systemSourceAccount, // system source: +amount
-          systemDestAccount, // system dest: -converted
+          systemSourceAccount,
+          systemDestAccount,
           convertedAmount,
-          destination_account_id, // user dest: +converted
+          destination_account_id,
         ],
       );
 
-      // 9️⃣ Обновляем балансы всех 4 аккаунтов
-      // User source: -amount
       await client.query(
         `
           UPDATE app.accounts
@@ -502,7 +472,6 @@ export class TransactionsService {
         [source_account_id, amount],
       );
 
-      // System source: +amount
       await client.query(
         `
           UPDATE app.accounts
@@ -512,7 +481,6 @@ export class TransactionsService {
         [systemSourceAccount, amount],
       );
 
-      // System dest: -converted
       await client.query(
         `
           UPDATE app.accounts
@@ -522,7 +490,6 @@ export class TransactionsService {
         [systemDestAccount, convertedAmount],
       );
 
-      // User dest: +converted
       await client.query(
         `
           UPDATE app.accounts

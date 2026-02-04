@@ -8,7 +8,6 @@ export class CreateTransferTransactionDto {
   @IsUUID()
   receiver_account_id: string;
 
-  // "100.50"
   @IsNumberString()
   amount: string;
 

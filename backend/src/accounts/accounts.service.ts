@@ -5,6 +5,7 @@ import type { IAccount } from './accounts.model';
 @Injectable()
 export class AccountsService {
   constructor(private readonly pgService: PgService) {}
+  private readonly SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
   async create(
     client: PgPoolClient,
@@ -32,8 +33,6 @@ export class AccountsService {
 
     return result.rows[0] ?? null;
   }
-
-  private readonly SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
   async get(currentUserId: string, currency?: string) {
     const params: string[] = [currentUserId, this.SYSTEM_USER_ID];

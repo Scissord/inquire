@@ -8,7 +8,6 @@ export class CreateExchangeTransactionDto {
   @IsUUID()
   destination_account_id: string;
 
-  // Amount in source currency, e.g. "100.00"
   @IsNumberString()
   amount: string;
 

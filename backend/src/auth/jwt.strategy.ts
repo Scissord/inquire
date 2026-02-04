@@ -8,8 +8,6 @@ export interface JwtPayload {
   email: string;
 }
 
-// passport-jwt has weak typings, suppressing false-positive eslint warnings
-// eslint-disable-next-line
 const jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 
 @Injectable()

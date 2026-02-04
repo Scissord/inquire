@@ -42,5 +42,4 @@ Ran all test suites matching transactions-deadlock.
 1) go to main route -> /inquire
 2) docker compose up
 3) go to localhost:3000 in browser
-4) start to test interface
-
+4) start to test frontend
