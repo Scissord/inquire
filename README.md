@@ -79,3 +79,4 @@ Ran all test suites matching transactions-deadlock.
 
 1. More time for frontend, separate code
 2. Use library components, no time to understand Select in Shadcn
+3. Add adaptive-layout
