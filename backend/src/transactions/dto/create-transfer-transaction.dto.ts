@@ -1,4 +1,5 @@
-import { IsNumberString, IsUUID } from 'class-validator';
+import { Optional } from '@nestjs/common';
+import { IsNumberString, IsObject, IsUUID } from 'class-validator';
 
 export class CreateTransferTransactionDto {
   @IsUUID()
@@ -11,5 +12,7 @@ export class CreateTransferTransactionDto {
   @IsNumberString()
   amount: string;
 
+  @Optional()
+  @IsObject()
   metadata: Record<string, unknown>;
 }

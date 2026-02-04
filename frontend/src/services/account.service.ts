@@ -2,7 +2,7 @@ import {
   IGetAccountsInput,
   IGetAccountsResponse,
   IGetAccountByIdInput,
-  IGetAccountByIdResponse
+  IGetAccountByIdResponse,
 } from '@/interfaces';
 import { useNotificationStore } from '@/store';
 
@@ -13,8 +13,13 @@ if (!NEXT_PUBLIC_BACKEND_API_URL) {
 }
 
 export const AccountService = {
-  async getAccounts(data: IGetAccountsInput): Promise<IGetAccountsResponse> {
-    const response = await fetch(`${NEXT_PUBLIC_BACKEND_API_URL}/accounts`, {
+  async get(data: IGetAccountsInput): Promise<IGetAccountsResponse> {
+    const url = new URL(`${NEXT_PUBLIC_BACKEND_API_URL}/accounts`);
+    if (data.currency) {
+      url.searchParams.set('currency', data.currency);
+    }
+
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -28,14 +33,19 @@ export const AccountService = {
     return result;
   },
 
-  async getAccountById(data: IGetAccountByIdInput): Promise<IGetAccountByIdResponse> {
-    const response = await fetch(`${NEXT_PUBLIC_BACKEND_API_URL}/accounts/${data.id}/balance`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${data.access_token}`,
+  async getAccountById(
+    data: IGetAccountByIdInput,
+  ): Promise<IGetAccountByIdResponse> {
+    const response = await fetch(
+      `${NEXT_PUBLIC_BACKEND_API_URL}/accounts/${data.id}/balance`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.access_token}`,
+        },
       },
-    });
+    );
 
     const result: IGetAccountByIdResponse = await response.json();
 

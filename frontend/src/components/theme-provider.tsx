@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useThemeStore } from '@/store';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -8,14 +8,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const initializeTheme = useThemeStore((state) => state.initializeTheme);
   const theme = useThemeStore((state) => state.theme);
 
-  useEffect(() => {
-    setMounted(true);
+  // Apply theme class ASAP (before paint) to avoid "white bg + white text"
+  useLayoutEffect(() => {
     initializeTheme();
+    setMounted(true);
   }, [initializeTheme]);
 
   // Применяем тему сразу при монтировании
   useEffect(() => {
-    if (mounted && typeof document !== 'undefined') {
+    if (typeof document !== 'undefined') {
       const root = document.documentElement;
       if (theme === 'dark') {
         root.classList.add('dark');
@@ -23,7 +24,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.classList.remove('dark');
       }
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   // Предотвращаем мигание при первой загрузке
   if (!mounted) {

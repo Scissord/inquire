@@ -19,7 +19,7 @@
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
-    "types": ["node", "pg"],
+    "types": ["node", "pg", "jest"],
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   }

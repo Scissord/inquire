@@ -6,3 +6,4 @@ export * from './auth/profile';
 
 // APP
 export * from './app/account';
+export * from './app/transaction';

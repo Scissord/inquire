@@ -12,14 +12,12 @@ import {
   DropdownMenuTrigger,
   Button,
 } from '@/components';
-  import { useUserStore } from '@/store';
+import { useUserStore } from '@/store';
 
 const navItems = [
   { label: 'Dashboard', href: '/' },
-  { label: 'О компании', href: '/about' },
-  { label: 'Модули', href: '/modules' },
-  { label: 'Тарифы', href: '/pricing' },
-  { label: 'Контакты', href: '/contacts' },
+  { label: 'Transaction', href: '/transactions' },
+  { label: 'History', href: '/history' },
 ];
 
 export function MainHeader() {
@@ -40,7 +38,7 @@ export function MainHeader() {
         <Link href="/" className="flex items-center">
           <div className="text-2xl font-bold">
             <span className="bg-gradient-to-r from-[#d7ad61] via-[#e8c374] to-[#d7ad61] bg-clip-text text-transparent">
-              GYV
+              TESTERO
             </span>
           </div>
         </Link>

@@ -33,18 +33,35 @@ export class AccountsService {
     return result.rows[0] ?? null;
   }
 
-  async get() {
+  private readonly SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+  async get(currentUserId: string, currency?: string) {
+    const params: string[] = [currentUserId, this.SYSTEM_USER_ID];
+    let currencyFilter = '';
+
+    if (currency) {
+      params.push(currency);
+      currencyFilter = `AND t1.currency = $${params.length}`;
+    }
+
     const result = await this.pgService.query<IAccount[]>(
       `
         SELECT
-          id,
-          user_id,
-          currency,
-          balance,
-          created_at
-        FROM app.accounts
+          t1.id,
+          t2.id as user_id,
+          t1.currency,
+          t1.balance,
+          t1.created_at,
+          t2.email as user_email
+        FROM app.accounts t1
+        JOIN auth.users t2 ON t2.id = t1.user_id
+        WHERE t2.deleted_at IS NULL
+          AND t1.user_id != $1
+          AND t1.user_id != $2
+          ${currencyFilter}
+        ORDER BY t1.created_at DESC
       `,
-      [],
+      params,
     );
 
     return result.rows ?? [];
@@ -66,5 +83,23 @@ export class AccountsService {
     );
 
     return result.rows[0] ?? null;
+  }
+
+  async findByUserId(user_id: string) {
+    const result = await this.pgService.query<IAccount>(
+      `
+        SELECT
+          id,
+          user_id,
+          currency,
+          balance,
+          created_at
+        FROM app.accounts
+        WHERE user_id = $1
+      `,
+      [user_id],
+    );
+
+    return result.rows ?? null;
   }
 }

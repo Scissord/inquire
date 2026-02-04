@@ -26,9 +26,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, JwtTokenGuard)
   @Get('me')
   me(
-    @CurrentUser() user: { user_id: string; email: string },
+    @CurrentUser() user: { user_id: string },
     @CurrentAccessToken() access_token: string,
   ) {
-    return { user: { id: user.user_id, email: user.email, access_token } };
+    return this.authService.me(user.user_id, access_token);
   }
 }

@@ -1,0 +1,217 @@
+================================================================================
+                        MINI BANKING PLATFORM - TODO LIST
+================================================================================
+Based on Full-Stack Assessment.pdf requirements analysis
+
+================================================================================
+                              BACKEND (70% MUST HAVE)
+================================================================================
+
+[DONE] ✅ POST /auth/login - User login
+[DONE] ✅ POST /auth/register - User registration
+[DONE] ✅ GET /auth/me - Get current user info
+[DONE] ✅ GET /accounts - List accounts
+[DONE] ✅ GET /accounts/:id/balance - Get specific account balance
+[DONE] ✅ POST /transactions/transfer - Transfer between users (same currency)
+[DONE] ✅ POST /transactions/exchange - Currency exchange within user's accounts
+[DONE] ✅ GET /transactions - List transactions with pagination
+[DONE] ✅ Double-entry ledger implementation
+[DONE] ✅ Deadlock prevention (ORDER BY id + FOR UPDATE)
+[DONE] ✅ lock_timeout = 5s for handling concurrent operations
+
+--------------------------------------------------------------------------------
+                           BACKEND - TODO
+--------------------------------------------------------------------------------
+
+[ ] 1. GET /transactions - Add `type` filter parameter (transfer, exchange)
+       File: backend/src/transactions/transactions.controller.ts
+       File: backend/src/transactions/transactions.service.ts
+       Current: get(limit, page)
+       Need: get(limit, page, type?)
+
+[ ] 2. GET /accounts - Filter by current user (return only user's own accounts)
+       OR add new endpoint GET /accounts/me for user's own accounts
+       File: backend/src/accounts/accounts.controller.ts
+       File: backend/src/accounts/accounts.service.ts
+       Need: pass user_id from JWT to filter accounts
+
+[ ] 3. GET /users - List users for recipient selection (dropdown)
+       File: backend/src/users/users.controller.ts (CREATE NEW)
+       Need: endpoint to list users (for transfer recipient selection)
+
+[ ] 4. Seeder/Migration: Create 3 pre-seeded test users
+       File: backend/src/migrations/007_seed_users.sql (CREATE NEW)
+       Users:
+         - user1@test.com / password123 (USD: $1000, EUR: €500)
+         - user2@test.com / password123 (USD: $1000, EUR: €500)
+         - user3@test.com / password123 (USD: $1000, EUR: €500)
+
+
+================================================================================
+                              FRONTEND (70% MUST HAVE)
+================================================================================
+
+[DONE] ✅ Authentication (login/register forms)
+[DONE] ✅ Dashboard page with accounts list
+[DONE] ✅ Account detail page
+[DONE] ✅ Transfer dialog (from account page)
+[DONE] ✅ Basic error handling and notifications
+
+--------------------------------------------------------------------------------
+                           FRONTEND - TODO
+--------------------------------------------------------------------------------
+
+[ ] 5. Dashboard: Show last 5 transactions
+       File: frontend/src/components/dashboard.tsx
+       Need: fetch transactions and display below accounts table
+
+[ ] 6. Dashboard: Add Exchange form
+       File: frontend/src/components/dashboard.tsx (or new exchange-form.tsx)
+       Fields:
+         - Source account (dropdown - user's USD or EUR)
+         - Amount to exchange
+         - Show converted amount (rate: 1 USD = 0.92 EUR)
+         - Submit button
+
+[ ] 7. Dashboard: Add Transfer form
+       File: frontend/src/components/dashboard.tsx (or new transfer-form.tsx)
+       Fields:
+         - Source account (dropdown - user's account)
+         - Recipient (dropdown - other users' same currency accounts)
+         - Amount
+         - Submit button
+
+[ ] 8. Transaction History Page
+       File: frontend/src/app/(pages)/transactions/page.tsx (CREATE NEW)
+       Features:
+         - Table/list of all transactions
+         - Filter by type (transfer, exchange) - dropdown
+         - Pagination controls
+         - Loading state
+
+[ ] 9. TransactionService: Add getTransactions method
+       File: frontend/src/services/transaction.service.ts
+       Method: getTransactions({ page, limit, type?, access_token })
+
+[ ] 10. TransactionService: Add createExchange method
+        File: frontend/src/services/transaction.service.ts
+        Method: createExchange({ source_account_id, destination_account_id, amount, access_token })
+
+[ ] 11. Navigation: Update header links
+        File: frontend/src/components/main-header.tsx
+        Links needed:
+          - Dashboard (/)
+          - Transactions (/transactions)
+        Remove fake links (О компании, Модули, Тарифы, Контакты)
+
+[ ] 12. Interfaces: Add Exchange interfaces
+        File: frontend/src/interfaces/app/transaction.ts
+        Need: ICreateExchangeInput, ICreateExchangeResponse, ITransaction
+
+
+================================================================================
+                         SHOULD HAVE (20%)
+================================================================================
+
+[ ] 13. Comprehensive error messages (backend validation)
+        - Clear messages for insufficient funds
+        - Clear messages for currency mismatch
+        - Clear messages for invalid accounts
+
+[ ] 14. Loading states in UI
+        - Loading spinner on forms
+        - Disable buttons while processing
+        - Skeleton loaders for data
+
+[ ] 15. Input validation (frontend)
+        - Amount > 0
+        - Amount <= balance
+        - Required fields
+
+[ ] 16. Transaction confirmation dialog before processing
+        "Are you sure you want to transfer $100 to user@example.com?"
+
+
+================================================================================
+                          NICE TO HAVE (10%)
+================================================================================
+
+[ ] 17. README.md with setup instructions
+        File: README.md (root)
+        Content:
+          - Setup instructions (npm install, env vars, database)
+          - Which user management approach (registration + pre-seeded)
+          - Design decisions
+          - Known limitations
+
+[ ] 18. Docker setup (docker-compose.yml exists, verify it works)
+
+[ ] 19. Unit tests for critical financial logic
+        File: backend/test/transactions.service.spec.ts
+        Tests:
+          - Transfer creates correct ledger entries
+          - Exchange creates 4 ledger entries
+          - Sum of ledger amounts = 0
+
+[ ] 20. Swagger/OpenAPI documentation
+        Already partially done (ApiTags decorators exist)
+        May need: @ApiOperation, @ApiResponse decorators
+
+[ ] 21. Balance reconciliation endpoint
+        GET /accounts/reconcile - verify ledger sum matches balances
+
+
+================================================================================
+                           PRIORITY ORDER
+================================================================================
+
+HIGH PRIORITY (Must complete):
+1. #1  - Transaction type filter (backend)
+2. #9  - TransactionService getTransactions (frontend)
+3. #8  - Transaction History Page (frontend)
+4. #5  - Dashboard last 5 transactions (frontend)
+5. #6  - Exchange form (frontend)
+6. #10 - TransactionService createExchange (frontend)
+7. #11 - Navigation links (frontend)
+
+MEDIUM PRIORITY:
+8. #7  - Transfer form on dashboard
+9. #2  - Filter accounts by user (backend)
+10. #3 - Users list endpoint (backend)
+11. #4 - Seed test users (backend)
+
+LOW PRIORITY (if time permits):
+12. #12-16 - Should have items
+13. #17-21 - Nice to have items
+
+
+================================================================================
+                         ESTIMATED TIME
+================================================================================
+
+High Priority:     ~3-4 hours
+Medium Priority:   ~2-3 hours
+Low Priority:      ~2-4 hours
+---------------------------------
+Total:             ~7-11 hours
+
+
+================================================================================
+                         CURRENT STATUS
+================================================================================
+
+Backend core logic: 90% complete
+  - Transfer: ✅ Done
+  - Exchange: ✅ Done
+  - Deadlock prevention: ✅ Done
+  - Ledger entries: ✅ Done
+
+Frontend:           50% complete
+  - Auth: ✅ Done
+  - Dashboard (basic): ✅ Done
+  - Transfer (from account page): ✅ Done
+  - Exchange form: ❌ Missing
+  - Transaction history: ❌ Missing
+
+
+================================================================================

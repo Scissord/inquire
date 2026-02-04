@@ -99,4 +99,23 @@ export class AuthService {
       },
     };
   }
+
+  async me(user_id: string, access_token: string) {
+    const user = await this.usersService.findById(user_id);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const accounts = await this.accountsService.findByUserId(user_id);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        access_token,
+      },
+      accounts,
+    };
+  }
 }

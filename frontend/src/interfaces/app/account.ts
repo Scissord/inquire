@@ -3,10 +3,13 @@ export interface IAccount {
   user_id: string;
   currency: string;
   balance: number;
+  created_at: string;
+  user_email: string;
 }
 
 export interface IGetAccountsInput {
   access_token: string;
+  currency?: string;
 }
 
 export interface IGetAccountsResponse {

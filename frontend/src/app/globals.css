@@ -248,4 +248,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Fix native select elements in dark mode */
+  select {
+    @apply bg-background text-foreground border border-border rounded-md px-2 py-1;
+  }
+  select option {
+    @apply bg-background text-foreground;
+  }
 }
