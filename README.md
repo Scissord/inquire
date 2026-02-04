@@ -67,6 +67,14 @@ Ran all test suites matching transactions-deadlock.
 
 ---
 
+## Getting Started
+
+As db i used Neon with Postgresql 17
+Connect already in .env.example 
+Docker connected
+
+---
+
 ## FEATURES
 
 ### Backend
