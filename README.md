@@ -71,7 +71,7 @@ Ran all test suites matching transactions-deadlock.
 
 ### Backend
 
-1. Make LedgerModule in backend
+1. Separate LedgerModule in backend from TransactionsModule
 2. Take out all queries to other instance
 3. Split code in createTransferTx and createExchangeTx func
 
